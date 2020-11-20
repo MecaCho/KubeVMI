@@ -1,3 +1,7 @@
 domain: qiuwenqi.com
 repo: virtualmobilephone
+resources:
+- group: infra
+  kind: VirtualMobilePhone
+  version: v1
 version: "2"
