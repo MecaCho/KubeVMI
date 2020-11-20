@@ -1,0 +1,7 @@
+apiVersion: infra.qiuwenqi.com/v1
+kind: VirtualMobilePhone
+metadata:
+  name: virtualmobilephone-sample
+spec:
+  # Add fields here
+  foo: bar
