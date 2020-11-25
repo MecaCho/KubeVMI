@@ -18,6 +18,12 @@ package controllers
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,10 +44,84 @@ type VirtualMobilePhoneReconciler struct {
 // +kubebuilder:rbac:groups=infra.qiuwenqi.com,resources=virtualmobilephones/status,verbs=get;update;patch
 
 func (r *VirtualMobilePhoneReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("virtualmobilephone", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("virtualmobilephone", req.NamespacedName)
 
-	// your logic here
+	virtualMobilePhone := &infrav1.VirtualMobilePhone{}
+
+	// Fetch the VirtualMobilePhone instance
+	err := r.Get(ctx, req.NamespacedName, virtualMobilePhone)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			log.Info("VirtualMobilePhone resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to get VirtualMobilePhone")
+		return ctrl.Result{}, err
+	}
+
+	// Check if the deployment already exists, if not create a new one
+	found := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: virtualMobilePhone.Name, Namespace: virtualMobilePhone.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		dep := r.deploymentForHazelcast(virtualMobilePhone)
+		log.Info("Creating a new Deployment", "Deployment.Namespace",
+			dep.Namespace, "Deployment.Name", dep.Name)
+		err = r.Create(ctx, dep)
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace",
+				dep.Namespace, "Deployment.Name", dep.Name)
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
+		return ctrl.Result{}, err
+	}
+
+	// Ensure the deployment size is the same as the spec
+	size := virtualMobilePhone.Spec.Size
+	if *found.Spec.Replicas != size {
+		found.Spec.Replicas = &size
+		err = r.Update(ctx, found)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment", "Deployment.Namespace",
+				found.Namespace, "Deployment.Name", found.Name)
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Update the VirtualMobilePhone status with the pod names
+	// List the pods for this virtualMobilePhone's deployment
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(virtualMobilePhone.Namespace),
+		client.MatchingLabels(labelsForHazelcast(virtualMobilePhone.Name)),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods", "VirtualMobilePhone.Namespace",
+			virtualMobilePhone.Namespace, "VirtualMobilePhone.Name", virtualMobilePhone.Name)
+		return ctrl.Result{}, err
+	}
+	podNames := getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, virtualMobilePhone.Status.Phones) {
+		virtualMobilePhone.Status.Phones = podNames
+		err := r.Status().Update(ctx, virtualMobilePhone)
+		if err != nil {
+			log.Error(err, "Failed to update VirtualMobilePhone status")
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -49,5 +129,63 @@ func (r *VirtualMobilePhoneReconciler) Reconcile(req ctrl.Request) (ctrl.Result,
 func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.VirtualMobilePhone{}).
+		Owns(&appsv1.Deployment{}).
 		Complete(r)
+}
+
+// func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
+//	return ctrl.NewControllerManagedBy(mgr).
+//		For(&hazelcastv1.VirtualMobilePhone{}).
+//		Owns(&appsv1.Deployment{}).
+//		Complete(r)
+// }
+
+// deploymentForHazelcast returns a virtualMobilePhone Deployment object
+func (r *VirtualMobilePhoneReconciler) deploymentForHazelcast(m *infrav1.VirtualMobilePhone) *appsv1.Deployment {
+	ls := labelsForHazelcast(m.Name)
+	replicas := m.Spec.Size
+
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.Name,
+			Namespace: m.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
+						// Image: "android:openvmi",
+						Image: "nginx:latest",
+						Name:  "virtualMobilePhone",
+					}},
+				},
+			},
+		},
+	}
+	// Set VirtualMobilePhone instance as the owner and controller
+	ctrl.SetControllerReference(m, dep, r.Scheme)
+	return dep
+}
+
+// labelsForHazelcast returns the labels for selecting the resources
+// belonging to the given virtualMobilePhone CR name.
+func labelsForHazelcast(name string) map[string]string {
+	return map[string]string{"app": "virtualMobilePhone", "hazelcast_cr": name}
+}
+
+// getPodNames returns the pod names of the array of pods passed in
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, pod := range pods {
+		podNames = append(podNames, pod.Name)
+	}
+	return podNames
 }
