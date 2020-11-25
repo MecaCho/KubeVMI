@@ -1,0 +1,20 @@
+apiVersion: infra.qiuwenqi.com/v1
+kind: VirtualMobilePhone
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"infra.qiuwenqi.com/v1","kind":"VirtualMobilePhone","metadata":{"annotations":{},"name":"virtualmobilephone-sample","namespace":"default"},"spec":{"cpu":"1","end_andriod_id":1,"foo":"bar","host":"-","memory":"1024","start_andriod_id":2}}
+  creationTimestamp: "2020-11-25T06:12:21Z"
+  generation: 1
+  name: virtualmobilephone-sample
+  namespace: default
+  resourceVersion: "12392"
+  selfLink: /apis/infra.qiuwenqi.com/v1/namespaces/default/virtualmobilephones/virtualmobilephone-sample
+  uid: 2dec805f-2ee5-11eb-a6db-48570264f8eb
+spec:
+  cpu: "1"
+  end_andriod_id: 1
+  foo: bar
+  host: '-'
+  memory: "1024"
+  start_andriod_id: 2

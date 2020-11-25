@@ -69,7 +69,7 @@ func (r *VirtualMobilePhoneReconciler) Reconcile(req ctrl.Request) (ctrl.Result,
 	err = r.Get(ctx, types.NamespacedName{Name: virtualMobilePhone.Name, Namespace: virtualMobilePhone.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentForHazelcast(virtualMobilePhone)
+		dep := r.deploymentForVirtualMobilePhone(virtualMobilePhone)
 		log.Info("Creating a new Deployment", "Deployment.Namespace",
 			dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
@@ -104,7 +104,7 @@ func (r *VirtualMobilePhoneReconciler) Reconcile(req ctrl.Request) (ctrl.Result,
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(virtualMobilePhone.Namespace),
-		client.MatchingLabels(labelsForHazelcast(virtualMobilePhone.Name)),
+		client.MatchingLabels(labelsForVirtualMobilePhone(virtualMobilePhone.Name)),
 	}
 	if err = r.List(ctx, podList, listOpts...); err != nil {
 		log.Error(err, "Failed to list pods", "VirtualMobilePhone.Namespace",
@@ -135,14 +135,14 @@ func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 // func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 //	return ctrl.NewControllerManagedBy(mgr).
-//		For(&hazelcastv1.VirtualMobilePhone{}).
+//		For(&vmiv1.VirtualMobilePhone{}).
 //		Owns(&appsv1.Deployment{}).
 //		Complete(r)
 // }
 
-// deploymentForHazelcast returns a virtualMobilePhone Deployment object
-func (r *VirtualMobilePhoneReconciler) deploymentForHazelcast(m *infrav1.VirtualMobilePhone) *appsv1.Deployment {
-	ls := labelsForHazelcast(m.Name)
+// deploymentForVirtualMobilePhone returns a virtualMobilePhone Deployment object
+func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav1.VirtualMobilePhone) *appsv1.Deployment {
+	ls := labelsForVirtualMobilePhone(m.Name)
 	replicas := m.Spec.Size
 
 	dep := &appsv1.Deployment{
@@ -164,7 +164,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForHazelcast(m *infrav1.Virtual
 						// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
 						// Image: "android:openvmi",
 						Image: "nginx:latest",
-						Name:  "virtualMobilePhone",
+						Name:  "virtual-mobile-app",
 					}},
 				},
 			},
@@ -175,10 +175,10 @@ func (r *VirtualMobilePhoneReconciler) deploymentForHazelcast(m *infrav1.Virtual
 	return dep
 }
 
-// labelsForHazelcast returns the labels for selecting the resources
+// labelsForVirtualMobilePhone returns the labels for selecting the resources
 // belonging to the given virtualMobilePhone CR name.
-func labelsForHazelcast(name string) map[string]string {
-	return map[string]string{"app": "virtualMobilePhone", "hazelcast_cr": name}
+func labelsForVirtualMobilePhone(name string) map[string]string {
+	return map[string]string{"app": "virtualMobilePhone", "vmi_cr": name}
 }
 
 // getPodNames returns the pod names of the array of pods passed in

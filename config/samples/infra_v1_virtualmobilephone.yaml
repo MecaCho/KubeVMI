@@ -5,3 +5,7 @@ metadata:
 spec:
   # Add fields here
   foo: bar
+  cpu: "1"
+  memory: "1024"
+  host: "-"
+  size: 1
