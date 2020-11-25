@@ -43,6 +43,7 @@ type VirtualMobilePhoneReconciler struct {
 // +kubebuilder:rbac:groups=infra.qiuwenqi.com,resources=virtualmobilephones,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=infra.qiuwenqi.com,resources=virtualmobilephones/status,verbs=get;update;patch
 
+// Reconcile reconciles VirtualMobilePhone object
 func (r *VirtualMobilePhoneReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("virtualmobilephone", req.NamespacedName)
@@ -126,19 +127,13 @@ func (r *VirtualMobilePhoneReconciler) Reconcile(req ctrl.Request) (ctrl.Result,
 	return ctrl.Result{}, nil
 }
 
+// SetupWithManager setupWithManager
 func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.VirtualMobilePhone{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }
-
-// func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
-//	return ctrl.NewControllerManagedBy(mgr).
-//		For(&vmiv1.VirtualMobilePhone{}).
-//		Owns(&appsv1.Deployment{}).
-//		Complete(r)
-// }
 
 // deploymentForVirtualMobilePhone returns a virtualMobilePhone Deployment object
 func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav1.VirtualMobilePhone) *appsv1.Deployment {
