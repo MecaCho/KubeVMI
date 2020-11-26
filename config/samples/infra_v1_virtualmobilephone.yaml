@@ -6,7 +6,8 @@ spec:
   # Add fields here
   cpu: "1"
   memory: "1024"
-  host: "-"
+  #  node name
+  host: "openvmi"
   size: 1
   vnc_port: 5400
   adb_port: 5200

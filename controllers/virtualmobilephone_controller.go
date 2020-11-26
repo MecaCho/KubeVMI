@@ -18,12 +18,14 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
+	"strconv"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -142,10 +144,10 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 	terminationGracePeriodSeconds := int64(3)
 	androidName := m.Name
 	nodeName := m.Spec.HOST
-	vncPort := string(m.Spec.VNCPort)
-	adbPort := string(m.Spec.ADBPort)
-	screenWidth := string(m.Spec.ScreenWidth)
-	screenHeigth := string(m.Spec.ScreenHeigth)
+	vncPort := strconv.FormatInt(int64(m.Spec.VNCPort), 10)
+	adbPort := strconv.FormatInt(int64(m.Spec.ADBPort), 10)
+	screenWidth := strconv.FormatInt(int64(m.Spec.ScreenWidth), 10)
+	screenHeigth := strconv.FormatInt(int64(m.Spec.ScreenHeigth), 10)
 	imageURL := m.Spec.Image
 
 	dep := &appsv1.Deployment{
@@ -260,32 +262,32 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 						}},
 						{Name: "volume-pipe", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/sockets/qemu_pipe",
+								Path: fmt.Sprintf("/opt/openvmi/android-socket/%s/sockets/qemu_pipe", androidName),
 							},
 						}},
 						{Name: "volume-bridge", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/sockets/openvmi_bridge",
+								Path: fmt.Sprintf("/opt/openvmi/android-socket/%s/sockets/openvmi_bridge", androidName),
 							},
 						}},
 						{Name: "volume-event0", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/input/event0",
+								Path: fmt.Sprintf("/opt/openvmi/android-socket/%s/input/event0", androidName),
 							},
 						}},
 						{Name: "volume-event1", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/input/event1",
+								Path: fmt.Sprintf("/opt/openvmi/android-socket/%s/input/event1", androidName),
 							},
 						}},
 						{Name: "volume-event2", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/input/event2",
+								Path: fmt.Sprintf("/opt/openvmi/android-socket/%s/input/event2", androidName),
 							},
 						}},
 						{Name: "volume-data", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: "/opt/openvmi/android-data/$ANDROID_NAME/data",
+								Path: fmt.Sprintf("/opt/openvmi/android-data/%s/data", 10),
 							},
 						}},
 						{Name: "volume-tun", VolumeSource: corev1.VolumeSource{
