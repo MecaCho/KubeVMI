@@ -139,6 +139,7 @@ func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav1.VirtualMobilePhone) *appsv1.Deployment {
 	ls := labelsForVirtualMobilePhone(m.Name)
 	replicas := m.Spec.Size
+	terminationGracePeriodSeconds := int64(3)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -155,12 +156,127 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{
+					TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+					Tolerations: []corev1.Toleration{
+						{Key: "node-role.kubernetes.io/master",
+							Effect: corev1.TaintEffectNoSchedule},
+					},
+					InitContainers: []corev1.Container{{
 						// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
 						// Image: "android:openvmi",
-						Image: "nginx:latest",
-						Name:  "virtual-mobile-app",
+						Image:           "nginx:latest",
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						Name:            "virtual-mobile-app",
+						Command:         []string{"/openvmi/android-cfg-init.sh"},
+						Resources:       corev1.ResourceRequirements{
+							// Limits: ,
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{Name: "volume-openvmi",
+								MountPath: "/openvmi",
+							},
+						},
+						Env: []corev1.EnvVar{
+							{Name: "ANDROID_NAME", Value: ""},
+							{Name: "ANDROID_IDX", Value: ""},
+							{Name: "ANDROID_VNC_PORT", Value: ""},
+							{Name: "ANDROID_ADB_PORT", Value: ""},
+							{Name: "ANDROID_SCREEN_WIDTH", Value: ""},
+							{Name: "ANDROID_SCREEN_HEIGHT", Value: ""},
+						},
 					}},
+					Containers: []corev1.Container{
+						{
+							// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
+							// Image: "android:openvmi",
+							Image:           "nginx:latest",
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									// map[corev1.ResourceCPU]resource.Quantity,
+								},
+								Requests: corev1.ResourceList{},
+							},
+							Name:    "android",
+							Command: []string{"/openvmi-init.sh"},
+							SecurityContext: &corev1.SecurityContext{
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{"SYS_ADMIN", "NET_ADMIN", "SYS_MODULE", "SYS_NICE", "SYS_TIME", "SYS_TTY_CONFIG", "NET_BROADCAST", "IPC_LOCK", "SYS_RESOURCE"},
+								},
+							},
+							Env: []corev1.EnvVar{
+								{Name: "ANDROID_NAME", Value: ""},
+								{Name: "PATH", Value: "/system/bin:/system/xbin"},
+								{Name: "ANDROID_DATA", Value: "/data"},
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PreStop: &corev1.Handler{Exec: &corev1.ExecAction{Command: []string{
+									"/openvmi/android-env-uninit.sh",
+								}}},
+							},
+							ReadinessProbe: &corev1.Probe{
+								InitialDelaySeconds: 5,
+								PeriodSeconds:       2,
+								TimeoutSeconds:      1,
+								SuccessThreshold:    1,
+								FailureThreshold:    30,
+								Handler: corev1.Handler{Exec: &corev1.ExecAction{Command: []string{
+									"sh", "-c", "getprop sys.boot_completed | grep 1"}}},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{Name: "volume-openvmi", MountPath: "/openvmi"},
+								{Name: "volume-pipe", MountPath: "/dev/qemu_pipe"},
+								{Name: "volume-bridge", MountPath: "/dev/openvmi_bridge:rw"},
+								{Name: "volume-event0", MountPath: "/dev/input/event0:rw"},
+								{Name: "volume-event1", MountPath: "/dev/input/event1:rw"},
+								{Name: "volume-event2", MountPath: "/dev/input/event2:rw"},
+								{Name: "volume-data", MountPath: "/data:rw"},
+								{Name: "volume-tun", MountPath: "/dev/tun:rw"},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{Name: "volume-openvmi", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-env/docker",
+							},
+						}},
+						{Name: "volume-pipe", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/sockets/qemu_pipe",
+							},
+						}},
+						{Name: "volume-bridge", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/sockets/openvmi_bridge",
+							},
+						}},
+						{Name: "volume-event0", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/input/event0",
+							},
+						}},
+						{Name: "volume-event1", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/input/event1",
+							},
+						}},
+						{Name: "volume-event2", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-socket/$ANDROID_NAME/input/event2",
+							},
+						}},
+						{Name: "volume-data", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/opt/openvmi/android-data/$ANDROID_NAME/data",
+							},
+						}},
+						{Name: "volume-tun", VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/dev/net/tun",
+							},
+						}},
+					},
 				},
 			},
 		},
@@ -173,7 +289,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 // labelsForVirtualMobilePhone returns the labels for selecting the resources
 // belonging to the given virtualMobilePhone CR name.
 func labelsForVirtualMobilePhone(name string) map[string]string {
-	return map[string]string{"app": "virtualMobilePhone", "vmi_cr": name}
+	return map[string]string{"app": "virtualMobilePhone", "android_name": name}
 }
 
 // getPodNames returns the pod names of the array of pods passed in

@@ -22,5 +22,6 @@ kustomize build config/default
 
 # TODO list
 
-
-
+1.unit tests 
+2.perf
+3.format, goreport
