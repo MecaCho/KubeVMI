@@ -140,6 +140,13 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 	ls := labelsForVirtualMobilePhone(m.Name)
 	replicas := m.Spec.Size
 	terminationGracePeriodSeconds := int64(3)
+	androidName := m.Name
+	nodeName := m.Spec.HOST
+	vncPort := string(m.Spec.VNCPort)
+	adbPort := string(m.Spec.ADBPort)
+	screenWidth := string(m.Spec.ScreenWidth)
+	screenHeigth := string(m.Spec.ScreenHeigth)
+	imageURL := m.Spec.Image
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -154,8 +161,13 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: ls,
+					Name:   androidName,
+					Annotations: map[string]string{
+						"container.apparmor.security.beta.kubernetes.io/android": "unconfined",
+						"container.seccomp.security.alpha.kubernetes.io/android": "localhost/android.json"},
 				},
 				Spec: corev1.PodSpec{
+					NodeName:                      nodeName,
 					TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 					Tolerations: []corev1.Toleration{
 						{Key: "node-role.kubernetes.io/master",
@@ -164,12 +176,17 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 					InitContainers: []corev1.Container{{
 						// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
 						// Image: "android:openvmi",
-						Image:           "nginx:latest",
+						Name:            "init-android",
+						Image:           "busybox",
 						ImagePullPolicy: corev1.PullIfNotPresent,
-						Name:            "virtual-mobile-app",
 						Command:         []string{"/openvmi/android-cfg-init.sh"},
-						Resources:       corev1.ResourceRequirements{
-							// Limits: ,
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								// map[]
+								// 	        resources:
+								//          limits:
+								//            openvmi/binder: 1
+							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{Name: "volume-openvmi",
@@ -177,19 +194,19 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 							},
 						},
 						Env: []corev1.EnvVar{
-							{Name: "ANDROID_NAME", Value: ""},
-							{Name: "ANDROID_IDX", Value: ""},
-							{Name: "ANDROID_VNC_PORT", Value: ""},
-							{Name: "ANDROID_ADB_PORT", Value: ""},
-							{Name: "ANDROID_SCREEN_WIDTH", Value: ""},
-							{Name: "ANDROID_SCREEN_HEIGHT", Value: ""},
+							{Name: "ANDROID_NAME", Value: androidName},
+							// {Name: "ANDROID_IDX", Value: },
+							{Name: "ANDROID_VNC_PORT", Value: vncPort},
+							{Name: "ANDROID_ADB_PORT", Value: adbPort},
+							{Name: "ANDROID_SCREEN_WIDTH", Value: screenWidth},
+							{Name: "ANDROID_SCREEN_HEIGHT", Value: screenHeigth},
 						},
 					}},
 					Containers: []corev1.Container{
 						{
 							// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
 							// Image: "android:openvmi",
-							Image:           "nginx:latest",
+							Image:           imageURL,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{

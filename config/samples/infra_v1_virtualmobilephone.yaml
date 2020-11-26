@@ -4,8 +4,13 @@ metadata:
   name: virtualmobilephone-sample
 spec:
   # Add fields here
-  foo: bar
   cpu: "1"
   memory: "1024"
   host: "-"
   size: 1
+  vnc_port: 5400
+  adb_port: 5200
+  screen_width: 720
+  screen_heigth: 1080
+  image: "android:openvmi"
+

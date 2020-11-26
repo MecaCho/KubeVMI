@@ -28,10 +28,15 @@ type VirtualMobilePhoneSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	CPU    string `json:"cpu"`
-	Memory string `json:"memory"`
-	HOST   string `json:"host"`
-	Size   int32  `json:"size,omitempty"`
+	CPU          string `json:"cpu"`
+	Memory       string `json:"memory"`
+	HOST         string `json:"host"`
+	Size         int32  `json:"size,omitempty"`
+	VNCPort      int    `json:"vnc_port"`
+	ADBPort      int    `json:"adb_port"`
+	ScreenWidth  int    `json:"screen_width"`
+	ScreenHeigth int    `json:"screen_heigth"`
+	Image        string `json:"image"`
 	// StartAndriodID int    `json:"start_andriod_id"`
 	// EndAndriodID   int    `json:"end_andriod_id"`
 }
