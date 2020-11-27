@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
@@ -150,6 +151,10 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 	screenHeigth := strconv.FormatInt(int64(m.Spec.ScreenHeigth), 10)
 	imageURL := m.Spec.Image
 	androidIDX := strconv.FormatInt(int64(m.Spec.AndriodIDX), 10)
+	// initResource := make(corev1.ResourceList)
+	// initResource["openvmi/binder"] = resource.Quantity{
+	// 	1,1,"", ""
+	// }
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -177,8 +182,6 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 							Effect: corev1.TaintEffectNoSchedule},
 					},
 					InitContainers: []corev1.Container{{
-						// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
-						// Image: "android:openvmi",
 						Name:            "init-android",
 						Image:           "busybox",
 						ImagePullPolicy: corev1.PullIfNotPresent,
@@ -189,6 +192,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 								// 	        resources:
 								//          limits:
 								//            openvmi/binder: 1
+
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
