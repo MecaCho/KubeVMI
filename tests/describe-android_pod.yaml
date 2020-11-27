@@ -1,0 +1,142 @@
+Name:               openvmi-01-0
+Namespace:          openvmi
+Priority:           0
+PriorityClassName:  <none>
+Node:               openvmi/10.10.16.218
+Start Time:         Fri, 27 Nov 2020 10:10:51 +0800
+Labels:             androidName=openvmi-01
+  controller-revision-hash=openvmi-01-7595f495dc
+  statefulset.kubernetes.io/pod-name=openvmi-01-0
+Annotations:        container.apparmor.security.beta.kubernetes.io/android: unconfined
+                      container.seccomp.security.alpha.kubernetes.io/android: localhost/android.json
+Status:             Running
+IP:                 10.244.0.17
+Controlled By:      StatefulSet/openvmi-01
+Init Containers:
+  init-android:
+    Container ID:  docker://6c08e8b3ced6e8c6f64991a27be1d62f1bf11a23105dbddb2f4ce66cd7f30c21
+    Image:         busybox
+    Image ID:      docker-pullable://busybox@sha256:a9286defaba7b3a519d585ba0e37d0b2cbee74ebfe590960b0b1d6a5e97d1e1d
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /openvmi/android-cfg-init.sh
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Fri, 27 Nov 2020 10:10:53 +0800
+      Finished:     Fri, 27 Nov 2020 10:10:54 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      openvmi/binder:  1
+    Requests:
+      openvmi/binder:  1
+    Environment:
+      ANDROID_NAME:           openvmi-01
+      ANDROID_IDX:            1
+      ANDROID_VNC_PORT:       5400
+      ANDROID_ADB_PORT:       5200
+      ANDROID_SCREEN_WIDTH:   720
+      ANDROID_SCREEN_HEIGHT:  1280
+    Mounts:
+      /openvmi from volume-openvmi (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-42wnb (ro)
+Containers:
+  android:
+    Container ID:  docker://b5e35358c9b9330019e50ac812445b407817b3dd816c2f6c63a019639272d93c
+    Image:         android:openvmi
+    Image ID:      docker://sha256:c3cfc30d43e9312df74210515148f8b48a44e47bbf9f2fb771a3e4af6612ddb9
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /openvmi-init.sh
+    State:          Running
+      Started:      Fri, 27 Nov 2020 10:10:56 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:             4
+      memory:          4Gi
+      openvmi/ashmem:  1
+      openvmi/binder:  1
+      openvmi/fuse:    1
+    Requests:
+      cpu:             1
+      memory:          1Gi
+      openvmi/ashmem:  1
+      openvmi/binder:  1
+      openvmi/fuse:    1
+    Readiness:         exec [sh -c getprop sys.boot_completed | grep 1] delay=5s timeout=1s period=2s #success=1 #failure=30
+    Environment:
+      ANDROID_NAME:  openvmi-01
+      PATH:          /system/bin:/system/xbin
+      ANDROID_DATA:  /data
+    Mounts:
+      /data:rw from volume-data (rw)
+      /dev/input/event0:rw from volume-event0 (rw)
+      /dev/input/event1:rw from volume-event1 (rw)
+      /dev/input/event2:rw from volume-event2 (rw)
+      /dev/openvmi_bridge:rw from volume-bridge (rw)
+      /dev/qemu_pipe from volume-pipe (rw)
+      /dev/tun:rw from volume-tun (rw)
+      /openvmi from volume-openvmi (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-42wnb (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  volume-openvmi:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-env/docker
+    HostPathType:
+  volume-pipe:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-socket/openvmi-01/sockets/qemu_pipe
+    HostPathType:
+  volume-bridge:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-socket/openvmi-01/sockets/openvmi_bridge
+    HostPathType:
+  volume-event0:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-socket/openvmi-01/input/event0
+    HostPathType:
+  volume-event1:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-socket/openvmi-01/input/event1
+    HostPathType:
+  volume-event2:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-socket/openvmi-01/input/event2
+    HostPathType:
+  volume-data:
+    Type:          HostPath (bare host directory volume)
+    Path:          /opt/openvmi/android-data/openvmi-01/data
+    HostPathType:
+  volume-tun:
+    Type:          HostPath (bare host directory volume)
+    Path:          /dev/net/tun
+    HostPathType:
+  default-token-42wnb:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-42wnb
+    Optional:    false
+QoS Class:       Burstable
+Node-Selectors:  <none>
+Tolerations:     node-role.kubernetes.io/master:NoSchedule
+  node.kubernetes.io/not-ready:NoExecute for 300s
+  node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type     Reason     Age   From              Message
+  ----     ------     ----  ----              -------
+  Normal   Pulled     32s   kubelet, openvmi  Container image "busybox" already present on machine
+  Normal   Created    32s   kubelet, openvmi  Created container init-android
+  Normal   Started    31s   kubelet, openvmi  Started container init-android
+  Normal   Pulled     29s   kubelet, openvmi  Container image "android:openvmi" already present on machine
+  Normal   Created    29s   kubelet, openvmi  Created container android
+  Normal   Started    28s   kubelet, openvmi  Started container android
+  Warning  Unhealthy  22s   kubelet, openvmi  Readiness probe failed:

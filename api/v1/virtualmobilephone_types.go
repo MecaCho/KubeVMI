@@ -37,6 +37,7 @@ type VirtualMobilePhoneSpec struct {
 	ScreenWidth  int    `json:"screen_width"`
 	ScreenHeigth int    `json:"screen_heigth"`
 	Image        string `json:"image"`
+	AndriodIDX   int    `json:"andriod_idx"`
 	// StartAndriodID int    `json:"start_andriod_id"`
 	// EndAndriodID   int    `json:"end_andriod_id"`
 }

@@ -14,4 +14,7 @@ spec:
   screen_width: 720
   screen_heigth: 1080
   image: "android:openvmi"
+  andriod_idx: 1
+#  start_andriod_id: 1
+#  end_andriod_id: 1
 

@@ -149,6 +149,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 	screenWidth := strconv.FormatInt(int64(m.Spec.ScreenWidth), 10)
 	screenHeigth := strconv.FormatInt(int64(m.Spec.ScreenHeigth), 10)
 	imageURL := m.Spec.Image
+	androidIDX := strconv.FormatInt(int64(m.Spec.AndriodIDX), 10)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -197,7 +198,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 						},
 						Env: []corev1.EnvVar{
 							{Name: "ANDROID_NAME", Value: androidName},
-							// {Name: "ANDROID_IDX", Value: },
+							{Name: "ANDROID_IDX", Value: androidIDX},
 							{Name: "ANDROID_VNC_PORT", Value: vncPort},
 							{Name: "ANDROID_ADB_PORT", Value: adbPort},
 							{Name: "ANDROID_SCREEN_WIDTH", Value: screenWidth},
@@ -206,8 +207,6 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 					}},
 					Containers: []corev1.Container{
 						{
-							// Image: "virtualMobilePhone/virtualMobilePhone:4.1",
-							// Image: "android:openvmi",
 							Image:           imageURL,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Resources: corev1.ResourceRequirements{
@@ -287,7 +286,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 						}},
 						{Name: "volume-data", VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
-								Path: fmt.Sprintf("/opt/openvmi/android-data/%s/data", 10),
+								Path: fmt.Sprintf("/opt/openvmi/android-data/%s/data", androidName),
 							},
 						}},
 						{Name: "volume-tun", VolumeSource: corev1.VolumeSource{
