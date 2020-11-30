@@ -5,7 +5,7 @@ metadata:
 spec:
   # Add fields here
   cpu: "1"
-  memory: "1024"
+  memory: "1024Mi"
   #  node name
   host: "openvmi"
   size: 1

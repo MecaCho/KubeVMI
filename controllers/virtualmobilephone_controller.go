@@ -138,6 +138,10 @@ func (r *VirtualMobilePhoneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Complete(r)
 }
 
+var (
+	quantity = *resource.NewQuantity(1, resource.DecimalSI)
+)
+
 // deploymentForVirtualMobilePhone returns a virtualMobilePhone Deployment object
 func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav1.VirtualMobilePhone) *appsv1.Deployment {
 	ls := labelsForVirtualMobilePhone(m.Name)
@@ -151,6 +155,8 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 	screenHeigth := strconv.FormatInt(int64(m.Spec.ScreenHeigth), 10)
 	imageURL := m.Spec.Image
 	androidIDX := strconv.FormatInt(int64(m.Spec.AndriodIDX), 10)
+	cpuRequest := m.Spec.CPU
+	memRequest := m.Spec.Memory
 	// initResource := make(corev1.ResourceList)
 	// initResource["openvmi/binder"] = resource.Quantity{
 	// 	1,1,"", ""
@@ -188,11 +194,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 						Command:         []string{"/openvmi/android-cfg-init.sh"},
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								// map[]
-								// 	        resources:
-								//          limits:
-								//            openvmi/binder: 1
-
+								"openvmi/binder": quantity,
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -214,10 +216,29 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 							Image:           imageURL,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Resources: corev1.ResourceRequirements{
+								//           requests:
+								//            cpu: 1
+								//            memory: 1024Mi
+								//          limits:
+								//            cpu: $ANDROID_CPUS
+								//            memory: ${ANDROID_MEMORY}Mi
+								//            openvmi/fuse: 1
+								//            openvmi/ashmem: 1
+								//            openvmi/binder: 1
+								// 							v1.ResourceName(v1.ResourceCPU):    resource.MustParse(cpuRequest),
+								//							v1.ResourceName(v1.ResourceMemory): resource.MustParse("1G"),
 								Limits: corev1.ResourceList{
 									// map[corev1.ResourceCPU]resource.Quantity,
+									corev1.ResourceName(corev1.ResourceCPU):    resource.MustParse(cpuRequest),
+									corev1.ResourceName(corev1.ResourceMemory): resource.MustParse(memRequest),
+									"openvmi/fuse":   quantity,
+									"openvmi/ashmem": quantity,
+									"openvmi/binder": quantity,
 								},
-								Requests: corev1.ResourceList{},
+								Requests: corev1.ResourceList{
+									corev1.ResourceName(corev1.ResourceCPU):    resource.MustParse("1"),
+									corev1.ResourceName(corev1.ResourceMemory): resource.MustParse("1024Mi"),
+								},
 							},
 							Name:    "android",
 							Command: []string{"/openvmi-init.sh"},
