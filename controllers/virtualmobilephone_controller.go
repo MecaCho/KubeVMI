@@ -157,10 +157,6 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 	androidIDX := strconv.FormatInt(int64(m.Spec.AndriodIDX), 10)
 	cpuRequest := m.Spec.CPU
 	memRequest := m.Spec.Memory
-	// initResource := make(corev1.ResourceList)
-	// initResource["openvmi/binder"] = resource.Quantity{
-	// 	1,1,"", ""
-	// }
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,19 +212,7 @@ func (r *VirtualMobilePhoneReconciler) deploymentForVirtualMobilePhone(m *infrav
 							Image:           imageURL,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Resources: corev1.ResourceRequirements{
-								//           requests:
-								//            cpu: 1
-								//            memory: 1024Mi
-								//          limits:
-								//            cpu: $ANDROID_CPUS
-								//            memory: ${ANDROID_MEMORY}Mi
-								//            openvmi/fuse: 1
-								//            openvmi/ashmem: 1
-								//            openvmi/binder: 1
-								// 							v1.ResourceName(v1.ResourceCPU):    resource.MustParse(cpuRequest),
-								//							v1.ResourceName(v1.ResourceMemory): resource.MustParse("1G"),
 								Limits: corev1.ResourceList{
-									// map[corev1.ResourceCPU]resource.Quantity,
 									corev1.ResourceName(corev1.ResourceCPU):    resource.MustParse(cpuRequest),
 									corev1.ResourceName(corev1.ResourceMemory): resource.MustParse(memRequest),
 									"openvmi/fuse":   quantity,
